@@ -1,2 +1,0 @@
-# Platform
-FlyingJapan Commerce Platform
