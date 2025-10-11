@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Simple HTML report page for Naver Commerce orders of the current day.
  * - When executed via PHP, it renders an HTML table in the response.
- * - It also saves the exact HTML markup to orders_today_result.html for static viewing.
+ * - It also saves the exact HTML markup to orders_result.html for static viewing.
  */
 
 if (!extension_loaded('curl')) {
@@ -17,17 +17,17 @@ date_default_timezone_set('Asia/Seoul');
 
 const TOKEN_URL  = 'https://api.commerce.naver.com/external/v1/oauth2/token';
 const ORDERS_URL = 'https://api.commerce.naver.com/external/v1/pay-order/seller/product-orders';
-const OUTPUT_HTML_FILE = __DIR__ . '/orders_today_result.html';
+const OUTPUT_HTML_FILE = __DIR__ . '/orders_result.html';
 
 const OPTION_COLUMN_CONFIG = [
     [
         'title'    => '출국일/시간 렌탈 (체크박스)',
-        'keys'     => ['출국일/시간', '대여시작일/시간'],
+        'keys'     => ['출국일/시간', '대여시작일/시간', '대여일/시간', '대여일', '출국일'],
         'checkbox' => true,
     ],
     [
         'title'    => '귀국일/시간',
-        'keys'     => ['귀국일/시간', '반납일/시간'],
+        'keys'     => ['귀국일/시간', '반납일/시간', '반납일', '귀국일'],
         'checkbox' => false,
     ],
     [
@@ -42,12 +42,12 @@ const OPTION_COLUMN_CONFIG = [
     ],
     [
         'title'    => '상세페이지 내용확인/약관 동의',
-        'keys'     => ['상세페이지 내용확인/약관 동의', '상세페이지 내용확인/약관동의'],
+        'keys'     => ['상세페이지 내용확인/약관 동의', '상세페이지 내용확인/약관동의', '상세페이지 내용확인', '약관동의'],
         'checkbox' => false,
     ],
     [
         'title'    => '상품선택',
-        'keys'     => ['상품선택'],
+        'keys'     => ['상품선택', '상품 선택'],
         'checkbox' => false,
     ],
 ];
@@ -242,6 +242,7 @@ function mapOrderRow(array $entry): array
 
     return [
         'productOrderId' => $product['productOrderId'] ?? $entry['productOrderId'] ?? '',
+        'productId'      => (string)($product['productId'] ?? ''),
         'orderId'        => $order['orderId'] ?? '',
         'buyer'          => $order['ordererName'] ?? '',
         'buyerId'        => (string)($order['ordererId'] ?? ''),
@@ -351,6 +352,7 @@ function computeCategoryColumns(array $product, array $optionFields, array $opti
 {
     $productId = (string)($product['productId'] ?? '');
     $productName = (string)($product['productName'] ?? '');
+    $productNameLower = mb_strtolower($productName, 'UTF-8');
     $normalizedChoice = mb_strtolower($optionFields['productChoice'] ?? '', 'UTF-8');
     $result = array_fill_keys(array_keys(CATEGORY_COLUMN_CONFIG), '');
     $qtyValue = $quantity > 0 ? (string)$quantity : '1';
@@ -370,6 +372,13 @@ function computeCategoryColumns(array $product, array $optionFields, array $opti
                 $set($result, '마리오파워업밴드', $qtyValue);
             }
             if (mb_strpos($normalizedChoice, '해리포터') !== false || mb_strpos($normalizedChoice, '지팡이') !== false) {
+                $set($result, '해리포터지팡이', $qtyValue);
+            }
+        } else {
+            if (mb_strpos($productNameLower, '마리오') !== false) {
+                $set($result, '마리오파워업밴드', $qtyValue);
+            }
+            if (mb_strpos($productNameLower, '해리포터') !== false || mb_strpos($productNameLower, '지팡이') !== false) {
                 $set($result, '해리포터지팡이', $qtyValue);
             }
         }
@@ -408,9 +417,16 @@ function computeCategoryColumns(array $product, array $optionFields, array $opti
                 $keywordLower = mb_strtolower($keyword, 'UTF-8');
                 if ($keywordLower !== '' && mb_strpos($haystack, $keywordLower) !== false) {
                     $set($result, $title, $qtyValue);
-                    break 2;
                 }
             }
+        }
+
+        if (($result['마리오파워업밴드'] ?? '') === '' && mb_strpos($haystack, '파워업밴드') !== false) {
+            $set($result, '마리오파워업밴드', $qtyValue);
+        }
+
+        if (($result['해리포터지팡이'] ?? '') === '' && (mb_strpos($haystack, '해리포터지팡이') !== false || mb_strpos($haystack, '해리포터 지팡이') !== false || mb_strpos($haystack, '지팡이') !== false)) {
+            $set($result, '해리포터지팡이', $qtyValue);
         }
     }
 
@@ -505,12 +521,9 @@ if ($error === null) {
         $paymentRaw = trim((string)($row['paymentDateRaw'] ?? ''));
         $orderRef   = (string)($row['productOrderId'] ?? uniqid('ord_', true));
 
-        $groupKeyParts = [
-            $buyerName,
-            $buyerId,
-            $orderId !== '' ? $orderId : ($paymentRaw !== '' ? $paymentRaw : $orderRef),
-        ];
-        $groupKey = implode('|', $groupKeyParts);
+        $buyerKey = $buyerId !== '' ? $buyerId : $buyerName;
+        $timeKey  = $paymentRaw !== '' ? $paymentRaw : ($orderId !== '' ? $orderId : $orderRef);
+        $groupKey = $buyerKey . '|' . $timeKey;
 
         if (!isset($grouped[$groupKey])) {
             $grouped[$groupKey] = [
@@ -603,10 +616,10 @@ if ($error === null) {
 
         $buyerNameDisplay = implode(', ', $buyerNameUnique);
         $buyerIdDisplay   = implode(', ', $buyerIdUnique);
-        $productNameDisplay = implode(', ', $productNameUnique);
+        $productNameDisplay = implode("\n", $productNameUnique);
         $buyerNameMismatch = count($buyerNameUnique) > 1;
         $buyerIdMismatch   = count($buyerIdUnique) > 1;
-        $productNameMismatch = count($productNameUnique) > 1;
+        $productNameMismatch = false;
 
         $categoriesDisplay = [];
         foreach ($group['categories'] as $title => $value) {
@@ -703,7 +716,7 @@ ob_start();
     <div class="meta">
         조회 기간: <?= htmlspecialchars($fromIsoDisplay ?? '', ENT_QUOTES, 'UTF-8') ?> ~ <?= htmlspecialchars($toIsoDisplay ?? '', ENT_QUOTES, 'UTF-8') ?><br>
         총 주문 수: <?= $totalOrderCount ?>건, 구매자 수: <?= $groupedCount ?>명, 결제 금액 합계: <?= number_format((float) $totalAmount) ?>원<br>
-        PHP에서 실행될 때 동일한 내용이 orders_today_result.html 파일로 저장됩니다.
+        PHP에서 실행될 때 동일한 내용이 orders_result.html 파일로 저장됩니다.
     </div>
 
     <?= $saveStatusPlaceholder ?>
@@ -746,10 +759,7 @@ ob_start();
                         <?= htmlspecialchars($group['buyerId'], ENT_QUOTES, 'UTF-8') ?>
                         <?php if (!empty($group['buyerIdMismatch'])): ?><span class="mismatch">※ 불일치</span><?php endif; ?>
                     </td>
-                    <td>
-                        <?= htmlspecialchars($group['productName'], ENT_QUOTES, 'UTF-8') ?>
-                        <?php if (!empty($group['productNameMismatch'])): ?><span class="mismatch">※ 불일치</span><?php endif; ?>
-                    </td>
+                    <td><?= nl2br(htmlspecialchars($group['productName'], ENT_QUOTES, 'UTF-8'), false) ?></td>
                     <td><?= htmlspecialchars($group['departureDisplay'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td>
                         <label class="option-checkbox">
@@ -791,7 +801,7 @@ ob_start();
 <?php
 $htmlBase = ob_get_clean();
 
-$successMarkup = '<p class="notice">정적 HTML을 orders_today_result.html 파일로 저장했습니다.</p>';
+$successMarkup = '<p class="notice">정적 HTML을 orders_result.html 파일로 저장했습니다.</p>';
 $failureMarkup = '<p class="error">정적 HTML 저장에 실패했습니다. 파일 권한을 확인하세요.</p>';
 
 $finalHtml = str_replace($saveStatusPlaceholder, $successMarkup, $htmlBase);
