@@ -1,6 +1,14 @@
+import type { Route } from "next";
 import Link from "next/link";
 
-const footerLinks = [
+type FooterLinkItem =
+  | { label: string; href: Route }
+  | { label: string; href: { pathname: Route; hash?: string } };
+
+const footerLinks: Array<{
+  title: string;
+  items: FooterLinkItem[];
+}> = [
   {
     title: "Flying Japan",
     items: [
@@ -14,7 +22,7 @@ const footerLinks = [
     items: [
       { label: "USJ 가이드", href: "/support/usj-guide" },
       { label: "파손 신고", href: "/damage-report" },
-      { label: "FAQ", href: "/support#faq" },
+      { label: "FAQ", href: { pathname: "/support", hash: "faq" } },
     ],
   },
   {
@@ -51,22 +59,19 @@ export function SiteFooter() {
               </p>
               <ul className="mt-3 space-y-2">
                 {group.items.map((item) => (
-                  <li key={item.href}>
-                    {item.href.startsWith("/") ? (
-                      <Link
-                        className="text-sm text-slate-500 transition hover:text-blue-500"
-                        href={item.href}
-                      >
-                        {item.label}
-                      </Link>
-                    ) : (
-                      <a
-                        className="text-sm text-slate-500 transition hover:text-blue-500"
-                        href={item.href}
-                      >
-                        {item.label}
-                      </a>
-                    )}
+                  <li
+                    key={
+                      typeof item.href === "string"
+                        ? item.href
+                        : `${item.href.pathname}#${item.href.hash ?? ""}`
+                    }
+                  >
+                    <Link
+                      className="text-sm text-slate-500 transition hover:text-blue-500"
+                      href={item.href}
+                    >
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

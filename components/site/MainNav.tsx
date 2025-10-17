@@ -1,14 +1,23 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
-type NavItem = {
+type InternalNavItem = {
+  label: string;
+  href: Route;
+  external?: false;
+};
+
+type ExternalNavItem = {
   label: string;
   href: string;
-  external?: boolean;
+  external: true;
 };
+
+type NavItem = InternalNavItem | ExternalNavItem;
 
 const primaryNav: NavItem[] = [
   { label: "홈", href: "/" },

@@ -27,7 +27,7 @@ export function FeaturedProducts() {
           {featuredProducts.map((product) => (
             <Link
               key={product.id}
-              href={product.href}
+              href={`/products/${product.slug}`}
               className="group flex h-full flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
             >
               <div className="space-y-4">

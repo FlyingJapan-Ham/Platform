@@ -4,11 +4,12 @@ import { notFound } from "next/navigation";
 import { getUsjTipBySlug } from "../../../data/usjTips";
 
 type UsjTipPageProps = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
-export default function UsjTipDetailPage({ params }: UsjTipPageProps) {
-  const tip = getUsjTipBySlug(params.slug);
+export default async function UsjTipDetailPage({ params }: UsjTipPageProps) {
+  const { slug } = await params;
+  const tip = getUsjTipBySlug(slug);
 
   if (!tip) {
     notFound();
@@ -45,7 +46,11 @@ export default function UsjTipDetailPage({ params }: UsjTipPageProps) {
 
         {tip.cta ? (
           <Link
-            href={tip.cta.href}
+            href={
+              "href" in tip.cta
+                ? tip.cta.href
+                : `/products/${tip.cta.productSlug}`
+            }
             className="inline-flex items-center justify-center rounded-full bg-blue-500 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-400"
           >
             {tip.cta.label}

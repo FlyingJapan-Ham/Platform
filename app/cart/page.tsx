@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 
 import { beautyProducts, usjProducts } from "../../data/catalog";
 
@@ -23,7 +23,7 @@ function clampQuantity(value: number) {
   return Math.min(Math.max(Math.trunc(value), 1), 6);
 }
 
-export default function CartPage() {
+function CartPageContent() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -271,5 +271,19 @@ export default function CartPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CartPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[50vh] items-center justify-center bg-slate-950 text-sm text-slate-400">
+          장바구니 정보를 불러오는 중입니다...
+        </div>
+      }
+    >
+      <CartPageContent />
+    </Suspense>
   );
 }

@@ -70,7 +70,7 @@ export default function UsjPage() {
             </p>
           </div>
           <Link
-            href="/usj-bundle"
+            href="/products/usj-bundle-set"
             className="inline-flex items-center justify-center rounded-full border border-slate-700 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-slate-200 hover:border-blue-400 hover:text-white"
           >
             번들 프로모션 보기

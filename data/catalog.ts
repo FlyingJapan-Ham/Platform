@@ -15,6 +15,14 @@ export type Product = {
   badges: string[];
   bullets: ProductBullet[];
   availability: string;
+  reviews?: Array<{
+    id: string;
+    author: string;
+    rating: number;
+    date: string;
+    tripType: string;
+    content: string;
+  }>;
 };
 
 export const usjProducts: Product[] = [

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -57,11 +57,25 @@ function findCalculatorProduct(token: string | null | undefined) {
   );
 }
 
+export default function BookNowPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center bg-slate-950 text-sm text-slate-400">
+          예약 정보를 준비 중입니다...
+        </div>
+      }
+    >
+      <BookNowPageContent />
+    </Suspense>
+  );
+}
+
 function formatKRW(value: number) {
   return value.toLocaleString("ko-KR");
 }
 
-export default function BookNowPage() {
+function BookNowPageContent() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -91,7 +105,7 @@ export default function BookNowPage() {
             items.push({ productId: product.id, quantity });
           }
         });
-    }
+}
 
     if (items.length === 0) {
       const singleToken = params.get("product") ?? fallbackProduct?.id ?? "";

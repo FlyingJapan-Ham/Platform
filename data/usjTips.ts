@@ -1,3 +1,15 @@
+import type { Route } from "next";
+
+type TipCta =
+  | {
+      label: string;
+      href: Route;
+    }
+  | {
+      label: string;
+      productSlug: string;
+    };
+
 export type UsjTip = {
   slug: string;
   title: string;
@@ -7,10 +19,7 @@ export type UsjTip = {
     heading: string;
     description: string;
   }>;
-  cta?: {
-    label: string;
-    href: string;
-  };
+  cta?: TipCta;
 };
 
 export const usjTips: UsjTip[] = [
@@ -39,7 +48,7 @@ export const usjTips: UsjTip[] = [
     ],
     cta: {
       label: "Power-Up Band 예약하기",
-      href: "/products/mario-power-up-band",
+      productSlug: "mario-power-up-band",
     },
   },
   {
@@ -67,7 +76,7 @@ export const usjTips: UsjTip[] = [
     ],
     cta: {
       label: "Harry Potter Wand 예약하기",
-      href: "/products/harry-potter-wand",
+      productSlug: "harry-potter-wand",
     },
   },
   {

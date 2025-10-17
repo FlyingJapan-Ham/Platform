@@ -5,7 +5,7 @@ import { getProductBySlug } from "../../../data/catalog";
 import { getReviewsByProductSlug } from "../../../data/reviews";
 
 type ProductPageProps = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 function formatReviewDate(value: string) {
@@ -23,8 +23,9 @@ function renderStars(rating: number) {
   return "★".repeat(rating).padEnd(5, "☆");
 }
 
-export default function ProductPage({ params }: ProductPageProps) {
-  const product = getProductBySlug(params.slug);
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { slug } = await params;
+  const product = getProductBySlug(slug);
 
   if (!product) {
     notFound();

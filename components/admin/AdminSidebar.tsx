@@ -1,9 +1,10 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const adminNav = [
+const adminNav: Array<{ label: string; href: Route }> = [
   { label: "대시보드", href: "/admin" },
   { label: "재고 관리", href: "/admin/inventory" },
   { label: "주문 관리", href: "/admin/orders" },

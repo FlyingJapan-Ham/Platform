@@ -1,4 +1,15 @@
+import type { Route } from "next";
+
 import { getProductName, productReviews } from "./reviews";
+
+type HomeCategory = {
+  title: string;
+  description: string;
+  href: Route;
+  badge: string;
+  priceLabel: string;
+  image: string;
+};
 
 export const heroStocks = [
   { name: "Harry Potter Wand", current: 120, total: 120 },
@@ -7,7 +18,7 @@ export const heroStocks = [
   { name: "ReFa 스트레이트 아이론", current: 24, total: 30 },
 ];
 
-export const homeCategories = [
+export const homeCategories: HomeCategory[] = [
   {
     title: "USJ Attractions",
     description:
@@ -97,33 +108,39 @@ export const customerReviews = productReviews
     author: review.author,
   }));
 
-export const featuredProducts = [
+export const featuredProducts: Array<{
+  id: string;
+  name: string;
+  price: string;
+  badge: string;
+  slug: string;
+}> = [
   {
     id: "feature-wand",
     name: "Harry Potter Interactive Wand",
     price: "3일 13,000원",
     badge: "USJ TOP1",
-    href: "/products/harry-potter-wand",
+    slug: "harry-potter-wand",
   },
   {
     id: "feature-band",
     name: "Mario Power-Up Band",
     price: "3일 13,000원",
     badge: "USJ 인기",
-    href: "/products/mario-power-up-band",
+    slug: "mario-power-up-band",
   },
   {
     id: "feature-dyson",
     name: "Dyson Airwrap Multi-Styler",
     price: "3일 40,000원",
     badge: "뷰티 베스트",
-    href: "/products/dyson-airwrap",
+    slug: "dyson-airwrap",
   },
   {
     id: "feature-refa",
     name: "ReFa 스트레이트 아이론",
     price: "3일 30,000원",
     badge: "100V 호환",
-    href: "/products/refa-straight-iron",
+    slug: "refa-straight-iron",
   },
 ];
