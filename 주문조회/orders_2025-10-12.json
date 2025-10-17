@@ -877,7 +877,6 @@
             "buyer": "강수지",
             "buyerId": "hari****",
             "productName": "[오사카 현지 수령\/반납] 일본 마리오 파워업밴드 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -909,14 +908,15 @@
             ],
             "productOrderIds": [
                 "2025101226688191"
-            ]
+            ],
+            "amountSum": 13000,
+            "amountDisplay": "13000"
         },
         {
             "groupKey": "xsie****|2025-10-12T16:12:02.361+09:00",
             "buyer": "강시언",
             "buyerId": "xsie****",
             "productName": "[오사카 현지 수령\/반납] 일본 해리포터 지팡이 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -948,14 +948,15 @@
             ],
             "productOrderIds": [
                 "2025101228160351"
-            ]
+            ],
+            "amountSum": 13000,
+            "amountDisplay": "13000"
         },
         {
             "groupKey": "kkan****|2025-10-12T18:39:09.471+09:00",
             "buyer": "강지혜",
             "buyerId": "kkan****",
             "productName": "[오사카 현지 수령\/반납] 일본 마리오 파워업밴드 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -987,14 +988,15 @@
             ],
             "productOrderIds": [
                 "2025101232584141"
-            ]
+            ],
+            "amountSum": 26000,
+            "amountDisplay": "26000"
         },
         {
             "groupKey": "kkan****|2025-10-12T18:40:43.996+09:00",
             "buyer": "강지혜",
             "buyerId": "kkan****",
             "productName": "[오사카 현지 수령\/반납] 일본 해리포터 지팡이 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1026,14 +1028,15 @@
             ],
             "productOrderIds": [
                 "2025101232630601"
-            ]
+            ],
+            "amountSum": 13000,
+            "amountDisplay": "13000"
         },
         {
             "groupKey": "kyn8****|2025-10-12T17:16:29.512+09:00",
             "buyer": "김영남",
             "buyerId": "kyn8****",
             "productName": "[오사카 현지 수령\/반납] 일본 오사카 마이크로 초경량 트라이크 디럭스 유모차 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1065,14 +1068,15 @@
             ],
             "productOrderIds": [
                 "2025101230125911"
-            ]
+            ],
+            "amountSum": 40000,
+            "amountDisplay": "40000"
         },
         {
             "groupKey": "pers****|2025-10-12T09:16:53.439+09:00",
             "buyer": "김현준",
             "buyerId": "pers****",
             "productName": "[오사카 현지 수령\/반납] 일본 해리포터 지팡이 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1104,14 +1108,15 @@
             ],
             "productOrderIds": [
                 "2025101216908581"
-            ]
+            ],
+            "amountSum": 26000,
+            "amountDisplay": "26000"
         },
         {
             "groupKey": "kimh****|2025-10-12T10:17:37.000+09:00",
             "buyer": "김효은",
             "buyerId": "kimh****",
             "productName": "[오사카 현지 수령\/반납] 일본 마리오 파워업밴드 대여 3일\n[오사카 현지 수령\/반납] 일본 해리포터 지팡이 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1144,14 +1149,15 @@
             "productOrderIds": [
                 "2025101215092001",
                 "2025101215092011"
-            ]
+            ],
+            "amountSum": 52000,
+            "amountDisplay": "52000"
         },
         {
             "groupKey": "nyds****|2025-10-12T11:47:34.054+09:00",
             "buyer": "남윤덕",
             "buyerId": "nyds****",
             "productName": "[오사카 현지 수령\/반납] 일본 해리포터 지팡이 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1183,14 +1189,15 @@
             ],
             "productOrderIds": [
                 "2025101220561651"
-            ]
+            ],
+            "amountSum": 13000,
+            "amountDisplay": "13000"
         },
         {
             "groupKey": "nyds****|2025-10-12T11:50:43.907+09:00",
             "buyer": "남윤덕",
             "buyerId": "nyds****",
             "productName": "[오사카 현지 수령\/반납] 일본 마리오 파워업밴드 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1222,14 +1229,15 @@
             ],
             "productOrderIds": [
                 "2025101220650241"
-            ]
+            ],
+            "amountSum": 26000,
+            "amountDisplay": "26000"
         },
         {
             "groupKey": "hr06****|2025-10-12T16:12:10.229+09:00",
             "buyer": "노혜란",
             "buyerId": "hr06****",
             "productName": "[오사카 현지 수령\/반납] 일본 마리오 파워업밴드 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1261,14 +1269,15 @@
             ],
             "productOrderIds": [
                 "2025101228160961"
-            ]
+            ],
+            "amountSum": 13000,
+            "amountDisplay": "13000"
         },
         {
             "groupKey": "maex****|2025-10-12T11:42:29.329+09:00",
             "buyer": "배성원",
             "buyerId": "maex****",
             "productName": "[오사카 현지 수령\/반납] 일본 해리포터 지팡이 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1300,14 +1309,15 @@
             ],
             "productOrderIds": [
                 "2025101220423081"
-            ]
+            ],
+            "amountSum": 13000,
+            "amountDisplay": "13000"
         },
         {
             "groupKey": "shj0****|2025-10-12T13:20:53.762+09:00",
             "buyer": "신호준",
             "buyerId": "shj0****",
             "productName": "[오사카 현지 수령\/반납] 일본 오사카 마이크로 초경량 트라이크 디럭스 유모차 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1339,14 +1349,15 @@
             ],
             "productOrderIds": [
                 "2025101223120041"
-            ]
+            ],
+            "amountSum": 40000,
+            "amountDisplay": "40000"
         },
         {
             "groupKey": "vldk****|2025-10-12T17:53:39.132+09:00",
             "buyer": "이지은",
             "buyerId": "vldk****",
             "productName": "[오사카 현지 수령\/반납] 일본 해리포터 지팡이 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1378,14 +1389,15 @@
             ],
             "productOrderIds": [
                 "2025101231237571"
-            ]
+            ],
+            "amountSum": 26000,
+            "amountDisplay": "26000"
         },
         {
             "groupKey": "aipp****|2025-10-12T23:23:52.364+09:00",
             "buyer": "이혜연",
             "buyerId": "aipp****",
             "productName": "[오사카 현지 수령\/반납] 일본 해리포터 지팡이 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1417,14 +1429,15 @@
             ],
             "productOrderIds": [
                 "2025101243325411"
-            ]
+            ],
+            "amountSum": 13000,
+            "amountDisplay": "13000"
         },
         {
             "groupKey": "duck****|2025-10-12T15:51:18.145+09:00",
             "buyer": "장현진",
             "buyerId": "duck****",
             "productName": "[오사카 현지 수령\/반납] 일본 해리포터 지팡이 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1456,14 +1469,15 @@
             ],
             "productOrderIds": [
                 "2025101227529191"
-            ]
+            ],
+            "amountSum": 26000,
+            "amountDisplay": "26000"
         },
         {
             "groupKey": "jht1****|2025-10-12T16:48:09.984+09:00",
             "buyer": "전현태",
             "buyerId": "jht1****",
             "productName": "[오사카 현지 수령\/반납] 일본 마리오 파워업밴드 대여 3일",
-            "adapterValue": "",
             "memoValue": "",
             "buyerNameMismatch": false,
             "buyerIdMismatch": false,
@@ -1495,7 +1509,9 @@
             ],
             "productOrderIds": [
                 "2025101229277381"
-            ]
+            ],
+            "amountSum": 26000,
+            "amountDisplay": "26000"
         }
     ],
     "error": null

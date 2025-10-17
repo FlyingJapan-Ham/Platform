@@ -549,11 +549,17 @@ if ($error === null) {
                 'statuses'               => [],
                 'paymentDates'           => [],
                 'deliveredDates'         => [],
+                'amounts'                => [],
                 'categories'             => array_fill_keys($categoryTitles, 0),
             ];
         }
 
         $group = $grouped[$groupKey];
+
+        $amountValue = (int) round((float) ($row['amount'] ?? 0));
+        if ($amountValue > 0) {
+            $group['amounts'][] = $amountValue;
+        }
 
         $group['buyerNames'][]  = $buyerName;
         $group['buyerIds'][]    = $buyerId;
@@ -640,12 +646,23 @@ if ($error === null) {
         $orderIdsUnique = array_values(array_unique(array_filter($group['orderIds'], static fn($v) => $v !== '')));
         $productOrderIdsUnique = array_values(array_unique(array_filter($group['productOrderIds'], static fn($v) => $v !== '')));
 
+        $orderCount = count($productOrderIdsUnique);
+        if ($orderCount === 0) {
+            $orderCount = count($orderIdsUnique);
+        }
+        if ($orderCount === 0) {
+            $orderCount = count($group['amounts']);
+        }
+
+        $amountValues = $group['amounts'];
+        $amountSum    = array_sum($amountValues);
+        $amountDisplay = $amountSum > 0 ? (string) $amountSum : '';
+
         $groupedRows[] = [
             'groupKey'           => $groupKey,
             'buyer'              => $buyerNameDisplay,
             'buyerId'            => $buyerIdDisplay,
             'productName'        => $productNameDisplay,
-            'adapterValue'       => '',
             'memoValue'          => '',
             'buyerNameMismatch'  => $buyerNameMismatch,
             'buyerIdMismatch'    => $buyerIdMismatch,
@@ -663,6 +680,8 @@ if ($error === null) {
             'paymentDisplay'     => $paymentDisplay,
             'paymentMismatch'    => $paymentMismatch,
             'deliveredDisplay'   => implode(', ', array_unique(array_filter($group['deliveredDates'], static fn($v) => $v !== ''))),
+            'amountDisplay'      => $amountDisplay,
+            'amountSum'          => $amountSum,
             'orderIds'           => $orderIdsUnique,
             'productOrderIds'    => $productOrderIdsUnique,
         ];
@@ -724,6 +743,7 @@ ob_start();
         .option-checkbox { display: inline-flex; align-items: center; gap: 0.3rem; }
         .option-checkbox input { margin: 0; }
         .mismatch { color: #d32f2f; font-size: 0.85rem; margin-left: 0.35rem; }
+        .amount-cell { text-align: right; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -786,12 +806,12 @@ ob_start();
                     <?php foreach ($categoryTitles as $categoryTitle): ?>
                         <th><?= htmlspecialchars($categoryTitle, ENT_QUOTES, 'UTF-8') ?></th>
                     <?php endforeach; ?>
-                    <th>아답터</th>
                     <th>비고</th>
                     <th>상세페이지 내용 확인</th>
                     <th>주문상태</th>
                     <th>결제일시</th>
                     <th>배송완료일</th>
+                    <th>결제금액</th>
                 </tr>
             </thead>
             <tbody>
@@ -828,7 +848,6 @@ ob_start();
                     <?php foreach ($categoryTitles as $categoryTitle): ?>
                         <td><?= htmlspecialchars($group['categories'][$categoryTitle] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                     <?php endforeach; ?>
-                    <td><?= htmlspecialchars($group['adapterValue'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><?= htmlspecialchars($group['memoValue'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><?= htmlspecialchars($group['detailConfirmation'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><?= htmlspecialchars($group['statusDisplay'], ENT_QUOTES, 'UTF-8') ?></td>
@@ -837,6 +856,7 @@ ob_start();
                         <?php if (!empty($group['paymentMismatch'])): ?><span class="mismatch">※ 불일치</span><?php endif; ?>
                     </td>
                     <td><?= htmlspecialchars($group['deliveredDisplay'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td class="amount-cell"><?= htmlspecialchars($group['amountDisplay'], ENT_QUOTES, 'UTF-8') ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
