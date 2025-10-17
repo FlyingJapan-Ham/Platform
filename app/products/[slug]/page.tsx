@@ -1,12 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getProductBySlug } from "../../../data/catalog";
+import {
+  getProductBySlug,
+  usjProducts,
+  beautyProducts,
+} from "../../../data/catalog";
 import { getReviewsByProductSlug } from "../../../data/reviews";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export function generateStaticParams() {
+  const allProducts = [...usjProducts, ...beautyProducts];
+  return allProducts.map((product) => ({
+    slug: product.slug,
+  }));
+}
 
 function formatReviewDate(value: string) {
   const date = new Date(value);
