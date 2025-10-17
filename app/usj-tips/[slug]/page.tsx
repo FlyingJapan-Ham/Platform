@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getUsjTipBySlug } from "../../../data/usjTips";
+import { getUsjTipBySlug, usjTips } from "../../../data/usjTips";
 
 type UsjTipPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export function generateStaticParams() {
+  return usjTips.map((tip) => ({
+    slug: tip.slug,
+  }));
+}
 
 export default async function UsjTipDetailPage({ params }: UsjTipPageProps) {
   const { slug } = await params;
