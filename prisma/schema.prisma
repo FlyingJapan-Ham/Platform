@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id         String         @id @default(cuid())
+  slug       String         @unique
+  name       String
+  category   String         @default("USJ")
+  basePrice  Int
+  lateFee    Int
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  units      InventoryUnit[]
+}
+
+model InventoryUnit {
+  id               String        @id @default(cuid())
+  productId        String
+  status           String        @default("AVAILABLE")
+  registrationDate DateTime      @default(now())
+  damageStatus     String        @default("NONE")
+  profitLoss       Float?
+  notes            String?
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}

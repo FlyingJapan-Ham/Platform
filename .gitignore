@@ -1,5 +1,9 @@
+/.next
+/.env
+/prisma/dev.db
 /vendor/
 /composer.lock
 /.phpunit.result.cache
 orders_result.html
 orders_result.json
+node_modules

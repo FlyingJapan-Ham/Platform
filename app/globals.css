@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --background-base: #f8fafc;
+  --surface-base: #ffffff;
+  --surface-muted: rgba(255, 255, 255, 0.92);
+  --surface-subtle: rgba(255, 255, 255, 0.85);
+  --border-muted: #cbd5f5;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  background-color: var(--background-base);
+  color: var(--text-primary);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background-base);
+  color: var(--text-primary);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.container {
+  width: min(1120px, 92vw);
+  margin: 0 auto;
+}
+
+.light-theme {
+  min-height: 100vh;
+  background-color: var(--background-base);
+  color: var(--text-primary);
+}
+
+.light-theme .bg-slate-950,
+.light-theme .bg-slate-950\/80,
+.light-theme .bg-slate-950\/75,
+.light-theme .bg-slate-950\/60,
+.light-theme .bg-slate-950\/40 {
+  background-color: var(--background-base) !important;
+  color: var(--text-primary);
+}
+
+.light-theme .bg-slate-900,
+.light-theme .bg-slate-900\/90,
+.light-theme .bg-slate-900\/80,
+.light-theme .bg-slate-900\/70,
+.light-theme .bg-slate-900\/60,
+.light-theme .bg-slate-900\/50,
+.light-theme .bg-slate-900\/40 {
+  background-color: var(--surface-subtle) !important;
+  color: var(--text-primary);
+}
+
+.light-theme .bg-slate-900\/80 .text-slate-400,
+.light-theme .bg-slate-900\/70 .text-slate-400,
+.light-theme .bg-slate-900\/60 .text-slate-400,
+.light-theme .bg-slate-900\/50 .text-slate-400,
+.light-theme .bg-slate-900\/40 .text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+
+.light-theme .border-slate-900,
+.light-theme .border-slate-800,
+.light-theme .border-slate-700 {
+  border-color: var(--border-muted) !important;
+}
+
+.light-theme .border-slate-600,
+.light-theme .border-slate-500 {
+  border-color: #c7d2fe !important;
+}
+
+.light-theme .divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-muted) !important;
+}
+
+.light-theme .text-white,
+.light-theme .text-slate-100,
+.light-theme .text-slate-50 {
+  color: var(--text-primary) !important;
+}
+
+.light-theme .text-slate-400,
+.light-theme .text-slate-500,
+.light-theme .text-slate-300,
+.light-theme .text-slate-200 {
+  color: var(--text-secondary) !important;
+}
+
+.light-theme .text-blue-100,
+.light-theme .text-blue-200,
+.light-theme .text-blue-300 {
+  color: #2563eb !important;
+}
+
+.light-theme .text-blue-500,
+.light-theme .text-blue-600 {
+  color: #1d4ed8 !important;
+}
+
+.light-theme .bg-blue-500 {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6) !important;
+}
+
+.light-theme .bg-blue-500:hover {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+}
+
+.light-theme .bg-blue-500\/20 {
+  background-color: rgba(59, 130, 246, 0.16) !important;
+  color: #1d4ed8;
+}
+
+.light-theme .bg-blue-500\/10,
+.light-theme .bg-blue-500\/5 {
+  background-color: rgba(147, 197, 253, 0.25) !important;
+  color: #1d4ed8;
+}
+
+.light-theme .border-blue-500\/20,
+.light-theme .border-blue-500\/30 {
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+.light-theme .bg-blue-950\/30,
+.light-theme .bg-blue-950\/20 {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  color: var(--text-primary);
+}
+
+.overlay-backdrop {
+  background: rgba(15, 23, 42, 0.42);
+}
+
+@layer components {
+  .section-light {
+    @apply border-b border-slate-200 bg-white;
+  }
+
+  .section-muted {
+    @apply border-b border-slate-200 bg-sky-50/40;
+  }
+
+  .card-light {
+    @apply rounded-3xl border border-slate-200 bg-white p-6 shadow-sm;
+  }
+
+  .card-muted {
+    @apply rounded-3xl border border-blue-100 bg-blue-50/70 p-6 shadow-sm;
+  }
+
+  .tag-light {
+    @apply inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-500;
+  }
+}
+.light-theme .bg-blue-500\/20 {
+  background-color: rgba(59, 130, 246, 0.16) !important;
+  color: #1d4ed8;
+}
+
+.light-theme .bg-blue-500\/10,
+.light-theme .bg-blue-500\/5 {
+  background-color: rgba(147, 197, 253, 0.25) !important;
+  color: #1d4ed8;
+}
+
+.light-theme .border-blue-500\/20,
+.light-theme .border-blue-500\/30 {
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+.light-theme .bg-blue-950\/30,
+.light-theme .bg-blue-950\/20 {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  color: var(--text-primary);
+}
