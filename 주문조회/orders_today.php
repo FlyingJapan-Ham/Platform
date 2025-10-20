@@ -642,6 +642,19 @@ if ($error === null) {
         $paymentUnique   = array_values(array_unique(array_filter($group['paymentDates'], static fn($v) => $v !== '')));
         $paymentDisplay  = implode(', ', $paymentUnique);
         $paymentMismatch = count($paymentUnique) > 1;
+        $paymentMonthDayValues = [];
+        foreach ($paymentUnique as $paymentIso) {
+            if ($paymentIso === '') {
+                continue;
+            }
+            try {
+                $dt = new DateTime($paymentIso);
+                $paymentMonthDayValues[] = $dt->format('m/d');
+            } catch (Throwable $e) {
+                $paymentMonthDayValues[] = $paymentIso;
+            }
+        }
+        $paymentMonthDayDisplay = implode(', ', array_values(array_unique($paymentMonthDayValues)));
 
         $orderIdsUnique = array_values(array_unique(array_filter($group['orderIds'], static fn($v) => $v !== '')));
         $productOrderIdsUnique = array_values(array_unique(array_filter($group['productOrderIds'], static fn($v) => $v !== '')));
@@ -678,6 +691,7 @@ if ($error === null) {
             'categories'         => $categoriesDisplay,
             'statusDisplay'      => implode(', ', array_unique(array_filter($group['statuses'], static fn($v) => $v !== ''))),
             'paymentDisplay'     => $paymentDisplay,
+            'paymentMonthDay'    => $paymentMonthDayDisplay,
             'paymentMismatch'    => $paymentMismatch,
             'deliveredDisplay'   => implode(', ', array_unique(array_filter($group['deliveredDates'], static fn($v) => $v !== ''))),
             'amountDisplay'      => $amountDisplay,
@@ -810,6 +824,7 @@ ob_start();
                     <th>상세페이지 내용 확인</th>
                     <th>주문상태</th>
                     <th>결제일시</th>
+                    <th>결제(월/일)</th>
                     <th>배송완료일</th>
                     <th>결제금액</th>
                 </tr>
@@ -855,6 +870,7 @@ ob_start();
                         <?= htmlspecialchars($group['paymentDisplay'], ENT_QUOTES, 'UTF-8') ?>
                         <?php if (!empty($group['paymentMismatch'])): ?><span class="mismatch">※ 불일치</span><?php endif; ?>
                     </td>
+                    <td><?= htmlspecialchars($group['paymentMonthDay'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><?= htmlspecialchars($group['deliveredDisplay'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td class="amount-cell"><?= htmlspecialchars($group['amountDisplay'], ENT_QUOTES, 'UTF-8') ?></td>
                 </tr>
