@@ -818,7 +818,7 @@ ob_start();
         <strong>정적 HTML 모드:</strong> 파일로 열려 있을 때 조회 버튼을 누르면 아래 주소로 이동합니다.<br>
         <label style="display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.35rem;">
             조회용 PHP 주소
-            <input type="url" id="static-mode-endpoint" value="http://127.0.0.1:8000/orders_today.php" style="width: 22rem; max-width: 100%;">
+            <input type="url" id="static-mode-endpoint" value="http://127.0.0.1:8000/주문조회/orders_today.php" style="width: 22rem; max-width: 100%;">
         </label>
         <small style="display: block; margin-top: 0.25rem;">필요 시 본인 환경의 서버 주소로 바꾸면 브라우저에 저장됩니다.</small>
     </div>
@@ -878,7 +878,7 @@ ob_start();
                     ev.preventDefault();
                     var target = endpointInput ? endpointInput.value.trim() : '';
                     if (!target) {
-                        alert('조회용 PHP 주소를 입력해 주세요. 예: http://127.0.0.1:8000/orders_today.php');
+                        alert('조회용 PHP 주소를 입력해 주세요. 예: http://127.0.0.1:8000/주문조회/orders_today.php');
                         return;
                     }
                     try {
