@@ -217,6 +217,14 @@ function mapOrderRow(array $entry): array
     $optionRaw  = $product['productOption'] ?? '';
     $optionParsed = parseProductOption($optionRaw);
 
+    $discountBreakdown = [
+        'product' => (int)($product['productDiscountAmount'] ?? 0),
+        'seller'  => (int)($product['sellerBurdenDiscountAmount'] ?? 0),
+        'order'   => (int)($order['orderDiscountAmount'] ?? 0),
+    ];
+    $totalDiscount = array_sum($discountBreakdown);
+    $couponApplied = $totalDiscount > 0;
+
     $optionColumns = [];
     foreach (OPTION_COLUMN_CONFIG as $config) {
         $value = '';
@@ -268,6 +276,9 @@ function mapOrderRow(array $entry): array
         'paymentDate'    => $order['paymentDate'] ?? '',
         'paymentDateRaw' => $order['paymentDate'] ?? '',
         'deliveredDate'  => $delivery['deliveredDate'] ?? '',
+        'discountBreakdown' => $discountBreakdown,
+        'totalDiscount'     => $totalDiscount,
+        'couponApplied'     => $couponApplied,
     ];
 }
 
@@ -339,14 +350,20 @@ function parseProductOption(?string $option): array
     return ['display' => $display, 'by_label' => $byLabel];
 }
 
-function shouldExcludeStatus(string $status): bool
+function shouldExcludeStatus(string $status, bool $showCancelledOnly): bool
 {
     if ($status === '') {
         return false;
     }
 
     $statusUpper = strtoupper($status);
-    return str_contains($statusUpper, 'CANCEL') || str_contains($statusUpper, 'RETURN');
+    $isCancelledOrReturned = str_contains($statusUpper, 'CANCEL') || str_contains($statusUpper, 'RETURN');
+
+    if ($showCancelledOnly) {
+        return !$isCancelledOrReturned;
+    }
+
+    return $isCancelledOrReturned;
 }
 
 /**
@@ -458,6 +475,9 @@ if (PHP_SAPI === 'cli' && isset($_SERVER['argv'])) {
 
 $fromParam = $cliArgs['from'] ?? ($_GET['from'] ?? $today->format('Y-m-d'));
 $toParam   = $cliArgs['to'] ?? ($_GET['to'] ?? $fromParam);
+$statusParamRaw = $cliArgs['status'] ?? ($_GET['status'] ?? 'active');
+$statusParam = in_array($statusParamRaw, ['active', 'cancelled'], true) ? $statusParamRaw : 'active';
+$showCancelledOnly = $statusParam === 'cancelled';
 
 $fromDate = null;
 $toDate   = null;
@@ -490,18 +510,18 @@ if ($error === null) {
         for ($cursor = clone $fromDate; $cursor <= $toDate; $cursor->modify('+1 day')) {
             $fromIso = $cursor->format('Y-m-d') . 'T00:00:00.000+09:00';
             $toIso   = $cursor->format('Y-m-d') . 'T23:59:59.999+09:00';
-        $raw     = fetchOrdersForRange($token, $fromIso, $toIso);
-        foreach ($raw as $entry) {
-            $product    = $entry['content']['productOrder'] ?? [];
-            $status     = (string)($product['productOrderStatus'] ?? '');
-            if (shouldExcludeStatus($status)) {
-                continue;
-            }
+            $raw     = fetchOrdersForRange($token, $fromIso, $toIso);
+            foreach ($raw as $entry) {
+                $product    = $entry['content']['productOrder'] ?? [];
+                $status     = (string)($product['productOrderStatus'] ?? '');
+                if (shouldExcludeStatus($status, $showCancelledOnly)) {
+                    continue;
+                }
 
-            $mapped = mapOrderRow($entry);
-            $mapped['rangeDate'] = $cursor->format('Y-m-d');
-            $orders[] = $mapped;
-        }
+                $mapped = mapOrderRow($entry);
+                $mapped['rangeDate'] = $cursor->format('Y-m-d');
+                $orders[] = $mapped;
+            }
         }
     } catch (Throwable $apiError) {
         $error = $apiError->getMessage();
@@ -551,6 +571,8 @@ if ($error === null) {
                 'deliveredDates'         => [],
                 'amounts'                => [],
                 'categories'             => array_fill_keys($categoryTitles, 0),
+                'discountTotals'         => [],
+                'couponFlags'            => [],
             ];
         }
 
@@ -560,6 +582,10 @@ if ($error === null) {
         if ($amountValue > 0) {
             $group['amounts'][] = $amountValue;
         }
+
+        $discountTotal = (int)($row['totalDiscount'] ?? 0);
+        $group['discountTotals'][] = $discountTotal;
+        $group['couponFlags'][] = !empty($row['couponApplied']);
 
         $group['buyerNames'][]  = $buyerName;
         $group['buyerIds'][]    = $buyerId;
@@ -671,6 +697,12 @@ if ($error === null) {
         $amountSum    = array_sum($amountValues);
         $amountDisplay = $amountSum > 0 ? (string) $amountSum : '';
 
+        $discountValues = array_map(static fn($v) => (int) $v, $group['discountTotals']);
+        $discountSum    = array_sum($discountValues);
+        $discountDisplay = $discountSum !== 0 ? (string) $discountSum : '';
+        $couponApplied = in_array(true, $group['couponFlags'], true) || $discountSum > 0;
+        $couponDisplay = $couponApplied ? 'Y' : '';
+
         $groupedRows[] = [
             'groupKey'           => $groupKey,
             'buyer'              => $buyerNameDisplay,
@@ -694,6 +726,10 @@ if ($error === null) {
             'paymentMonthDay'    => $paymentMonthDayDisplay,
             'paymentMismatch'    => $paymentMismatch,
             'deliveredDisplay'   => implode(', ', array_unique(array_filter($group['deliveredDates'], static fn($v) => $v !== ''))),
+            'discountAmountDisplay' => $discountDisplay,
+            'discountAmountSum'  => $discountSum,
+            'couponApplied'      => $couponApplied,
+            'couponAppliedDisplay' => $couponDisplay,
             'amountDisplay'      => $amountDisplay,
             'amountSum'          => $amountSum,
             'orderIds'           => $orderIdsUnique,
@@ -711,6 +747,7 @@ $toIsoDisplay   = $toDate?->format('Y-m-d') . 'T23:59:59.999+09:00';
 // Date input values for HTML date pickers
 $fromDateValue  = $fromDate?->format('Y-m-d') ?? '';
 $toDateValue    = $toDate?->format('Y-m-d') ?? '';
+$statusFilterDisplay = $showCancelledOnly ? '취소 주문만 (취소/반품 상태 포함)' : '취소 제외 (정상 주문)';
 // Form action: point to PHP script so static saved HTML can also navigate correctly
 $formAction = 'orders_today.php';
 if (!empty($_SERVER['PHP_SELF']) && PHP_SAPI !== 'cli') {
@@ -769,10 +806,25 @@ ob_start();
         <label>종료일
             <input type="date" name="to" value="<?= htmlspecialchars($toDateValue, ENT_QUOTES, 'UTF-8') ?>">
         </label>
+        <label>주문 상태
+            <select name="status">
+                <option value="active" <?= $showCancelledOnly ? '' : 'selected' ?>>취소 제외 (정상 주문)</option>
+                <option value="cancelled" <?= $showCancelledOnly ? 'selected' : '' ?>>취소 주문만</option>
+            </select>
+        </label>
         <button type="submit">조회</button>
     </form>
+    <div class="notice" id="static-mode-hint" style="display: none;">
+        <strong>정적 HTML 모드:</strong> 파일로 열려 있을 때 조회 버튼을 누르면 아래 주소로 이동합니다.<br>
+        <label style="display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.35rem;">
+            조회용 PHP 주소
+            <input type="url" id="static-mode-endpoint" value="http://127.0.0.1:8000/orders_today.php" style="width: 22rem; max-width: 100%;">
+        </label>
+        <small style="display: block; margin-top: 0.25rem;">필요 시 본인 환경의 서버 주소로 바꾸면 브라우저에 저장됩니다.</small>
+    </div>
     <div class="meta">
         조회 기간: <?= htmlspecialchars($fromIsoDisplay ?? '', ENT_QUOTES, 'UTF-8') ?> ~ <?= htmlspecialchars($toIsoDisplay ?? '', ENT_QUOTES, 'UTF-8') ?><br>
+        상태 필터: <?= htmlspecialchars($statusFilterDisplay, ENT_QUOTES, 'UTF-8') ?><br>
         총 주문 수: <?= $totalOrderCount ?>건, 구매자 수: <?= $groupedCount ?>명, 결제 금액 합계: <?= number_format((float) $totalAmount) ?>원<br>
         PHP에서 실행될 때 동일한 내용이 orders_result.html 파일로 저장됩니다.
     </div>
@@ -781,7 +833,7 @@ ob_start();
 
     <script>
     // If this page is opened as a saved static HTML (orders_result.html),
-    // ensure the form posts to the PHP endpoint for live querying.
+    // guide the user to redirect the query to a live PHP endpoint.
     (function(){
         try {
             var form = document.querySelector('form[method="get"]');
@@ -790,12 +842,81 @@ ob_start();
             if (!action.endsWith('orders_today.php')) {
                 form.setAttribute('action','orders_today.php');
             }
-            // If opened via file://, prevent submitting to a local .php (which downloads) and guide the user.
+
+            var storageKey = 'ordersTodayPhpEndpoint';
+            var defaultEndpoint = 'http://127.0.0.1:8000/orders_today.php';
+            var endpointInput = document.getElementById('static-mode-endpoint');
+            var hint = document.getElementById('static-mode-hint');
+
             if (location.protocol === 'file:') {
+                if (hint) {
+                    hint.style.display = 'block';
+                }
+                var savedEndpoint = '';
+                try {
+                    savedEndpoint = window.localStorage ? (localStorage.getItem(storageKey) || '') : '';
+                } catch (err) {
+                    savedEndpoint = '';
+                }
+                var currentEndpoint = savedEndpoint || defaultEndpoint;
+                if (endpointInput) {
+                    endpointInput.value = currentEndpoint;
+                    endpointInput.addEventListener('input', function(){
+                        try {
+                            if (!window.localStorage) return;
+                            var value = this.value.trim();
+                            if (value) {
+                                localStorage.setItem(storageKey, value);
+                            } else {
+                                localStorage.removeItem(storageKey);
+                            }
+                        } catch (err) {}
+                    });
+                }
+
                 form.addEventListener('submit', function(ev){
                     ev.preventDefault();
-                    alert('이 페이지는 정적 파일(orders_result.html)로 열렸습니다. 조회하려면 웹 서버 주소(예: http://127.0.0.1:8000/orders_today.php)로 접속한 후 이용해 주세요.');
+                    var target = endpointInput ? endpointInput.value.trim() : '';
+                    if (!target) {
+                        alert('조회용 PHP 주소를 입력해 주세요. 예: http://127.0.0.1:8000/orders_today.php');
+                        return;
+                    }
+                    try {
+                        if (window.localStorage) {
+                            localStorage.setItem(storageKey, target);
+                        }
+                    } catch (err) {}
+
+                    var query = buildQueryString(form);
+                    if (!query) {
+                        window.location.href = target;
+                        return;
+                    }
+
+                    var hasQuestion = target.indexOf('?') !== -1;
+                    var separator = '?';
+                    if (hasQuestion) {
+                        var endsWithQuery = /[?&]$/.test(target);
+                        separator = endsWithQuery ? '' : '&';
+                    }
+                    window.location.href = target + separator + query;
                 });
+            }
+
+            function buildQueryString(formEl) {
+                var pairs = [];
+                var elements = formEl.elements || [];
+                for (var i = 0; i < elements.length; i++) {
+                    var field = elements[i];
+                    if (!field || !field.name || field.disabled) continue;
+                    var type = (field.type || '').toLowerCase();
+                    if ((type === 'checkbox' || type === 'radio') && !field.checked) {
+                        continue;
+                    }
+                    var value = field.value == null ? '' : String(field.value);
+                    pairs.push(encodeURIComponent(field.name) + '=' + encodeURIComponent(value));
+                }
+                return pairs.join('&');
             }
         } catch (e) {}
     })();
@@ -826,6 +947,8 @@ ob_start();
                     <th>결제일시</th>
                     <th>결제(월/일)</th>
                     <th>배송완료일</th>
+                    <th>할인금액</th>
+                    <th>쿠폰적용</th>
                     <th>결제금액</th>
                 </tr>
             </thead>
@@ -872,6 +995,8 @@ ob_start();
                     </td>
                     <td><?= htmlspecialchars($group['paymentMonthDay'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><?= htmlspecialchars($group['deliveredDisplay'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td class="amount-cell"><?= htmlspecialchars($group['discountAmountDisplay'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= htmlspecialchars($group['couponAppliedDisplay'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                     <td class="amount-cell"><?= htmlspecialchars($group['amountDisplay'], ENT_QUOTES, 'UTF-8') ?></td>
                 </tr>
             <?php endforeach; ?>
