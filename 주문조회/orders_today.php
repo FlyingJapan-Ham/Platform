@@ -844,7 +844,7 @@ ob_start();
             }
 
             var storageKey = 'ordersTodayPhpEndpoint';
-            var defaultEndpoint = 'http://127.0.0.1:8000/orders_today.php';
+            var defaultEndpoint = 'http://127.0.0.1:8000/주문조회/orders_today.php';
             var endpointInput = document.getElementById('static-mode-endpoint');
             var hint = document.getElementById('static-mode-hint');
 
