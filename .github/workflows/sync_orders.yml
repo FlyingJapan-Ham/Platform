@@ -1,0 +1,50 @@
+name: Sync Orders to Google Sheets
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: curl, mbstring, json
+        
+    - name: Install Dependencies
+      run: |
+        cd 주문조회
+        composer install --no-dev --optimize-autoloader
+
+    - name: Create Credentials File
+      run: |
+        cd 주문조회
+        echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
+
+    - name: Run Sync Script
+      env:
+        SHEET_ID: ${{ secrets.SHEET_ID }}
+      run: |
+        cd 주문조회
+        # We run the PHP script directly to pass the SHEET_ID from env more easily, 
+        # or we can modify the shell script to accept env vars. 
+        # Let's run PHP directly for clarity in CI.
+        TODAY=$(date +%Y-%m-%d)
+        echo "Syncing for date: $TODAY"
+        
+        php orders_today.php \
+          --from="$TODAY" \
+          --to="$TODAY" \
+          --sheet-id="$SHEET_ID" \
+          --sheet-range="Orders!A1" \
+          --google-credentials="./credentials.json" \
+          --format=json
