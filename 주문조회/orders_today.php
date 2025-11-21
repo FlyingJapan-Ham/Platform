@@ -25,6 +25,7 @@ date_default_timezone_set('Asia/Seoul');
 const TOKEN_URL  = 'https://api.commerce.naver.com/external/v1/oauth2/token';
 const ORDERS_URL = 'https://api.commerce.naver.com/external/v1/pay-order/seller/product-orders';
 const OUTPUT_HTML_FILE = __DIR__ . '/orders_result.html';
+const DEFAULT_SHEET_RANGE = 'Orders!A1';
 
 const OPTION_COLUMN_CONFIG = [
     [
@@ -366,6 +367,153 @@ function shouldExcludeStatus(string $status, bool $showCancelledOnly): bool
     return $isCancelledOrReturned;
 }
 
+function parseBooleanFlagValue(string $value): bool
+{
+    $normalized = strtolower(trim($value));
+    if ($normalized === '') {
+        return false;
+    }
+
+    return in_array($normalized, ['1', 'true', 'yes', 'y', 'on'], true);
+}
+
+function ensureGoogleClientIsAvailable(): void
+{
+    if (class_exists('\\Google\\Client')) {
+        return;
+    }
+
+    $autoload = __DIR__ . '/vendor/autoload.php';
+    if (!is_file($autoload)) {
+        throw new RuntimeException('Google Sheets export를 사용하려면 vendor/autoload.php가 필요합니다. composer install을 먼저 실행해주세요.');
+    }
+
+    require_once $autoload;
+
+    if (!class_exists('\\Google\\Client')) {
+        throw new RuntimeException('google/apiclient 패키지를 찾을 수 없습니다. composer require google/apiclient 명령으로 설치해 주세요.');
+    }
+}
+
+/**
+ * @param array<int,array<string,mixed>> $groupedRows
+ * @param array<int,string> $categoryTitles
+ * @return array<int,array<int,string>>
+ */
+function buildSheetRowsForGoogle(array $groupedRows, array $categoryTitles, bool $includeHeader): array
+{
+    $headers = array_merge(
+        ['조회일', '구매자명', '로그인 ID', '상품명', '출국일/시간 렌탈', '렌탈 체크', '귀국일/시간', '반납 체크', '파손 체크'],
+        $categoryTitles,
+        [
+            '비고',
+            '상세페이지 내용 확인',
+            '주문상태',
+            '결제일시',
+            '결제(월/일)',
+            '배송완료일',
+            '할인금액',
+            '쿠폰적용',
+            '결제금액',
+            '상품주문번호',
+            '주문번호',
+        ]
+    );
+
+    $rows = [];
+    if ($includeHeader) {
+        $rows[] = $headers;
+    }
+
+    foreach ($groupedRows as $group) {
+        $productName = str_replace(["\r\n", "\r"], "\n", (string)($group['productName'] ?? ''));
+        $row = [
+            $group['rangeDateDisplay'] ?? '',
+            $group['buyer'] ?? '',
+            $group['buyerId'] ?? '',
+            $productName,
+            $group['departureDisplay'] ?? '',
+            !empty($group['departureChecked']) ? 'Y' : '',
+            $group['returnDisplay'] ?? '',
+            !empty($group['returnChecked']) ? 'Y' : '',
+            !empty($group['damageChecked']) ? 'Y' : '',
+        ];
+
+        foreach ($categoryTitles as $title) {
+            $row[] = $group['categories'][$title] ?? '';
+        }
+
+        $row = array_merge($row, [
+            $group['memoValue'] ?? '',
+            $group['detailConfirmation'] ?? '',
+            $group['statusDisplay'] ?? '',
+            $group['paymentDisplay'] ?? '',
+            $group['paymentMonthDay'] ?? '',
+            $group['deliveredDisplay'] ?? '',
+            $group['discountAmountDisplay'] ?? '',
+            $group['couponAppliedDisplay'] ?? '',
+            $group['amountDisplay'] ?? '',
+            implode("\n", $group['productOrderIds'] ?? []),
+            implode("\n", $group['orderIds'] ?? []),
+        ]);
+
+        $rows[] = $row;
+    }
+
+    return $rows;
+}
+
+/**
+ * @param array<int,array<int,string>> $rows
+ * @return array<string,mixed>
+ */
+function appendRowsToGoogleSheet(string $spreadsheetId, string $range, array $rows, ?string $credentialsPath = null): array
+{
+    if ($spreadsheetId === '') {
+        throw new InvalidArgumentException('sheet-id 값이 비어 있습니다.');
+    }
+    if ($range === '') {
+        throw new InvalidArgumentException('sheet-range 값이 비어 있습니다.');
+    }
+    if (empty($rows)) {
+        return ['updatedRows' => 0];
+    }
+
+    ensureGoogleClientIsAvailable();
+
+    $client = new \Google\Client();
+    $client->setApplicationName('FlyingJapan Orders Exporter');
+    $client->setScopes([\Google\Service\Sheets::SPREADSHEETS]);
+
+    if ($credentialsPath !== null) {
+        if (!is_readable($credentialsPath)) {
+            throw new RuntimeException('지정한 Google 자격 증명 파일을 읽을 수 없습니다: ' . $credentialsPath);
+        }
+        $client->setAuthConfig($credentialsPath);
+    } else {
+        $client->useApplicationDefaultCredentials();
+    }
+
+    $service = new \Google\Service\Sheets($client);
+    $valueRange = new \Google\Service\Sheets\ValueRange([
+        'values' => $rows,
+    ]);
+
+    $params = [
+        'valueInputOption' => 'USER_ENTERED',
+        'insertDataOption' => 'INSERT_ROWS',
+    ];
+
+    $response = $service->spreadsheets_values->append($spreadsheetId, $range, $valueRange, $params);
+    $updates = $response->getUpdates();
+
+    return [
+        'updatedRange'   => $updates?->getUpdatedRange(),
+        'updatedRows'    => $updates?->getUpdatedRows(),
+        'updatedColumns' => $updates?->getUpdatedColumns(),
+    ];
+}
+
 /**
  * @param array<string,mixed> $product
  * @param array<string,string> $optionFields
@@ -478,6 +626,28 @@ $toParam   = $cliArgs['to'] ?? ($_GET['to'] ?? $fromParam);
 $statusParamRaw = $cliArgs['status'] ?? ($_GET['status'] ?? 'active');
 $statusParam = in_array($statusParamRaw, ['active', 'cancelled'], true) ? $statusParamRaw : 'active';
 $showCancelledOnly = $statusParam === 'cancelled';
+$sheetIdParam = isset($cliArgs['sheet-id']) ? trim((string) $cliArgs['sheet-id']) : null;
+if ($sheetIdParam === '') {
+    $sheetIdParam = null;
+}
+$sheetRangeParam = trim((string) ($cliArgs['sheet-range'] ?? DEFAULT_SHEET_RANGE));
+if ($sheetRangeParam === '') {
+    $sheetRangeParam = DEFAULT_SHEET_RANGE;
+}
+$sheetIncludeHeader = isset($cliArgs['sheet-include-header']) ? parseBooleanFlagValue((string) $cliArgs['sheet-include-header']) : false;
+$googleCredentialsParam = $cliArgs['google-credentials'] ?? null;
+if ($googleCredentialsParam !== null) {
+    $googleCredentialsParam = trim((string) $googleCredentialsParam);
+    if ($googleCredentialsParam === '') {
+        $googleCredentialsParam = null;
+    }
+}
+if ($googleCredentialsParam === null) {
+    $envCredential = getenv('GOOGLE_APPLICATION_CREDENTIALS');
+    if (is_string($envCredential) && $envCredential !== '') {
+        $googleCredentialsParam = $envCredential;
+    }
+}
 
 $fromDate = null;
 $toDate   = null;
@@ -573,6 +743,7 @@ if ($error === null) {
                 'categories'             => array_fill_keys($categoryTitles, 0),
                 'discountTotals'         => [],
                 'couponFlags'            => [],
+                'rangeDates'             => [],
             ];
         }
 
@@ -598,6 +769,9 @@ if ($error === null) {
         }
 
         $fields = $row['optionFields'];
+        if (!empty($row['rangeDate'])) {
+            $group['rangeDates'][] = (string) $row['rangeDate'];
+        }
 
         if (($fields['departure'] ?? '') !== '') {
             $group['departures'][] = $fields['departure'];
@@ -635,6 +809,8 @@ if ($error === null) {
     }
 
     foreach ($grouped as $groupKey => $group) {
+        $rangeDateValues = array_values(array_unique(array_filter($group['rangeDates'], static fn($v) => $v !== '')));
+        $rangeDateDisplay = implode(', ', $rangeDateValues);
         $uniqueDepartures = array_values(array_unique(array_filter($group['departures'], static fn($v) => $v !== '')));
         $uniqueReturn     = array_values(array_unique(array_filter($group['returns'], static fn($v) => $v !== '')));
         $uniqueReturnCheckbox = array_values(array_unique(array_filter($group['returnCheckboxValues'], static fn($v) => $v !== '')));
@@ -705,6 +881,8 @@ if ($error === null) {
 
         $groupedRows[] = [
             'groupKey'           => $groupKey,
+            'rangeDateDisplay'   => $rangeDateDisplay,
+            'rangeDates'         => $rangeDateValues,
             'buyer'              => $buyerNameDisplay,
             'buyerId'            => $buyerIdDisplay,
             'productName'        => $productNameDisplay,
@@ -734,6 +912,7 @@ if ($error === null) {
             'amountSum'          => $amountSum,
             'orderIds'           => $orderIdsUnique,
             'productOrderIds'    => $productOrderIdsUnique,
+            'orderCount'         => $orderCount,
         ];
     }
 
@@ -757,6 +936,51 @@ if (!empty($_SERVER['PHP_SELF']) && PHP_SAPI !== 'cli') {
 $groupedCount = count($groupedRows);
 $totalAmount = array_sum(array_map(static fn($row) => (float) $row['amount'], $orders));
 
+$sheetExportInfo = [
+    'requested' => $sheetIdParam !== null,
+    'status'    => $sheetIdParam !== null ? 'pending' : 'not_requested',
+    'message'   => '',
+    'details'   => null,
+    'sheetId'   => $sheetIdParam,
+    'range'     => $sheetRangeParam,
+    'includeHeader' => $sheetIncludeHeader,
+];
+if ($sheetIdParam !== null) {
+    if (PHP_SAPI !== 'cli') {
+        $sheetExportInfo['status'] = 'unsupported';
+        $sheetExportInfo['message'] = 'Google Sheets 내보내기는 CLI에서만 사용할 수 있습니다.';
+    } elseif ($error !== null) {
+        $sheetExportInfo['status'] = 'skipped';
+        $sheetExportInfo['message'] = '데이터 조회 오류가 있어 시트 전송을 건너뜁니다.';
+    } else {
+        try {
+            $rowsForSheet = buildSheetRowsForGoogle($groupedRows, $categoryTitles, $sheetIncludeHeader);
+            if (empty($rowsForSheet)) {
+                $sheetExportInfo['status'] = 'no_rows';
+                $sheetExportInfo['message'] = '시트에 보낼 행이 없습니다.';
+            } else {
+                $sheetResult = appendRowsToGoogleSheet($sheetIdParam, $sheetRangeParam, $rowsForSheet, $googleCredentialsParam);
+                $sheetExportInfo['status'] = 'success';
+                $sheetExportInfo['details'] = $sheetResult;
+                $sheetExportInfo['message'] = sprintf(
+                    'Google Sheets에 %d행을 추가했습니다. (range: %s)',
+                    (int) ($sheetResult['updatedRows'] ?? count($rowsForSheet)),
+                    $sheetRangeParam
+                );
+                if (PHP_SAPI === 'cli') {
+                    fwrite(STDERR, '[sheet-export] ' . $sheetExportInfo['message'] . PHP_EOL);
+                }
+            }
+        } catch (Throwable $sheetException) {
+            $sheetExportInfo['status'] = 'error';
+            $sheetExportInfo['message'] = $sheetException->getMessage();
+            if (PHP_SAPI === 'cli') {
+                fwrite(STDERR, '[sheet-export] 실패: ' . $sheetException->getMessage() . PHP_EOL);
+            }
+        }
+    }
+}
+
 $outputFormat = $cliArgs['format'] ?? 'html';
 if ($outputFormat === 'json') {
     $payload = [
@@ -768,6 +992,7 @@ if ($outputFormat === 'json') {
         'orders'          => $orders,
         'groupedRows'     => $groupedRows,
         'error'           => $error,
+        'sheetExport'     => $sheetExportInfo,
     ];
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit;

@@ -17,7 +17,7 @@
 - PHP 8.1 이상 (CLI)
 - `curl` 확장
 - Composer(선택)
-  - `composer.json`은 오토로더 구성을 위해 존재하지만, 현재 추가 패키지는 사용하지 않습니다.
+  - `google/apiclient` 패키지를 사용해 Google Sheets API로 바로 전송할 수 있습니다. 저장소에 포함된 `vendor` 폴더가 최신 버전이 아니라면 `composer install`로 의존성을 설치/업데이트하세요.
 
 ## 인증 정보
 
@@ -86,6 +86,55 @@ php analyze_orders.php 2025-10-01 2025-10-09
 - `orders_result.json`: JSON 결과(`--format=json`)를 리다이렉트하여 보관할 때 사용하는 예시 이름입니다.
 - 과거 특정 일자를 보관하고 싶다면 실행 시 별도의 파일명으로 리다이렉트하여 저장하면 됩니다.
 - 웹 서버 문서 루트가 저장소 루트라면 `/orders_today.php` 경로도 동작하도록 동일한 이름의 래퍼 파일을 제공합니다.
+
+## Google Sheets 자동 적재
+
+CLI에서 스크립트를 실행할 때 Google Sheets API로 결과를 바로 적재할 수 있습니다. 기본 HTML/JSON 출력은 그대로 유지하고, 추가로 시트에 행을 append합니다.
+
+1. [Google Cloud Console](https://console.cloud.google.com/)에서 프로젝트를 만들고 **Sheets API**를 사용 설정합니다.
+2. 서비스 계정을 생성한 뒤 JSON 키 파일을 내려받습니다.
+3. 데이터를 기록할 스프레드시트(예: `https://docs.google.com/spreadsheets/d/<ID>/edit`)를 서비스 계정 이메일에 **공유(편집 권한)** 합니다.
+4. 아래 중 하나를 선택합니다.
+   - 환경 변수 `GOOGLE_APPLICATION_CREDENTIALS=/경로/sa.json` 설정
+   - 실행 시 `--google-credentials=/경로/sa.json` 옵션 전달
+5. CLI 옵션
+   - `--sheet-id=<스프레드시트 ID>` : 필수. URL의 `/d/` 다음 문자열.
+   - `--sheet-range='Sheet1!A1'` : 데이터를 append할 탭과 시작 위치(기본 `Orders!A1`).
+   - `--sheet-include-header=1` : 최초 한 번만 사용하여 헤더 행을 생성합니다.
+   - `--format=json` : (선택) JSON을 로그로 남길 때 유용합니다.
+
+실행 예시는 다음과 같습니다.
+
+```bash
+# 1) 최초 실행: 헤더를 생성하고 2월 10일 주문을 적재
+php orders_today.php --from=2025-02-10 --to=2025-02-10 \
+  --format=json \
+  --sheet-id=1AbCdEfGhIjKlMnOpQrStUvWxYz123456 \
+  --sheet-range='주문기록!A1' \
+  --sheet-include-header=1 \
+  --google-credentials=/secure/path/service-account.json
+
+# 2) 매일 자정 직후(전일 데이터) 자동 실행
+YESTERDAY=$(date -d 'yesterday' +%F) # macOS cron이라면 `date -v-1d +%F`
+php orders_today.php --from="$YESTERDAY" --to="$YESTERDAY" \
+  --format=json \
+  --sheet-id=1AbCdEfGhIjKlMnOpQrStUvWxYz123456 \
+  --sheet-range='주문기록!A1'
+```
+
+JSON 응답(`--format=json`)에는 `sheetExport` 필드가 추가되어 Google Sheets 전달 성공/실패 여부와 API 응답 요약을 확인할 수 있습니다. CLI에서는 stderr로도 `sheet-export` 로그가 출력됩니다.
+
+운영 환경 스케줄링 예시 (Linux cron):
+
+```
+5 0 * * * cd /Users/you/Platform/주문조회 && \
+  /usr/bin/php orders_today.php --from=$(date -d 'yesterday' +\%F) --to=$(date -d 'yesterday' +\%F) \
+  --format=json --sheet-id=1AbCdEfGhIjKlMnOpQrStUvWxYz123456 --sheet-range='주문기록!A1' \
+  >> /var/log/flying-japan/orders.log 2>&1
+```
+
+macOS `cron` 또는 `launchd`를 사용할 경우 `date -v-1d +%F` 구문을 사용하면 동일한 효과를 얻을 수 있습니다. 오류가 발생하면 시트 전송은 자동으로 건너뛰며, HTML/JSON 출력은 기존처럼 `orders_result.html`로 저장됩니다.
+주문이 한 건도 없는 날에는 시트에 새로운 행이 추가되지 않습니다(헤더를 강제로 쓰도록 지시한 경우 제외).
 
 ## 커스터마이즈
 

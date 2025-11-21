@@ -1,7 +1,9 @@
 {
     "name": "fj/platform",
     "type": "project",
-    "require": {},
+    "require": {
+        "google/apiclient": "^2.17"
+    },
     "require-dev": {
         "phpunit/phpunit": "^9.6"
     },
